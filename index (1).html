@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragon Holidays BD - Voucher Checker</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-box button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .search-box button:hover {
+            background: #5568d3;
+        }
+
+        .search-box button:active {
+            transform: scale(0.98);
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-size: 14px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .result {
+            background: #f8f9fa;
+            padding: 24px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result-header {
+            margin-bottom: 20px;
+        }
+
+        .voucher-code {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            word-break: break-all;
+        }
+
+        .status-valid {
+            color: #28a745;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .status-expired {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .result-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .detail-item {
+            background: white;
+            padding: 16px;
+            border-radius: 6px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .detail-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            word-break: break-word;
+        }
+
+        .detail-full-width {
+            grid-column: 1 / -1;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 16px;
+            border-radius: 6px;
+            margin-top: 20px;
+            display: none;
+            text-align: center;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Voucher Checker</h1>
+            <p>Dragon Holidays BD</p>
+        </div>
+
+        <div class="search-box">
+            <input 
+                type="text" 
+                id="voucherInput" 
+                placeholder="Enter voucher code..."
+                autocomplete="off"
+            >
+            <button onclick="searchVoucher()">Search</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            Searching...
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="result" id="result">
+            <div class="result-header">
+                <div class="voucher-code" id="resultCode"></div>
+                <div id="resultStatus"></div>
+            </div>
+
+            <div class="result-details">
+                <div class="detail-item">
+                    <div class="detail-label">Value</div>
+                    <div class="detail-value" id="resultValue">-</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Customer Name</div>
+                    <div class="detail-value" id="resultCustomer">-</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Issue Date</div>
+                    <div class="detail-value" id="resultIssueDate">-</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Expiry Date</div>
+                    <div class="detail-value" id="resultExpiryDate">-</div>
+                </div>
+
+                <div class="detail-item detail-full-width">
+                    <div class="detail-label">Redeemable Service</div>
+                    <div class="detail-value" id="resultService">-</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Date of Redemption</div>
+                    <div class="detail-value" id="resultRedemptionDate">-</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Service of Redemption</div>
+                    <div class="detail-value" id="resultRedemptionService">-</div>
+                </div>
+
+                <div class="detail-item detail-full-width">
+                    <div class="detail-label">New Purchased Service Price</div>
+                    <div class="detail-value" id="resultNewPrice">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Dragon Holidays BD © 2024
+        </div>
+    </div>
+
+    <script>
+        let vouchersData = [];
+
+        // Load vouchers from Google Sheet when page loads
+        window.addEventListener('load', function() {
+            loadVouchers();
+        });
+
+        function loadVouchers() {
+            const sheetId = '2PACX-1vRcrx3UrR9k2ieS1vvOoSG76axonB64J4dMbmeAGfio6JmalbFc4QY17mTHHt07BjNm1qWPAjgKU94Y';
+            const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+
+            fetch(csvUrl)
+                .then(response => response.text())
+                .then(data => {
+                    parseCSV(data);
+                })
+                .catch(error => {
+                    console.error('Error loading vouchers:', error);
+                    showError('Unable to load voucher data. Please try again later.');
+                });
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+
+            // Map headers to our column names
+            const columnMap = {
+                voucherCode: headers.findIndex(h => h.toUpperCase().includes('CODE')),
+                value: headers.findIndex(h => h.toUpperCase().includes('VALUE')),
+                customerName: headers.findIndex(h => h.toUpperCase().includes('CUSTOMER')),
+                issueDate: headers.findIndex(h => h.toUpperCase().includes('ISSUE')),
+                expiryDate: headers.findIndex(h => h.toUpperCase().includes('EXPIRY')),
+                service: headers.findIndex(h => h.toUpperCase().includes('REDEEMABLE')),
+                redemptionDate: headers.findIndex(h => h.toUpperCase().includes('DATE OF REDEMPTION')),
+                redemptionService: headers.findIndex(h => h.toUpperCase().includes('SERVICE OF REDEMPTION')),
+                newPrice: headers.findIndex(h => h.toUpperCase().includes('NEW PURCHASED'))
+            };
+
+            // Parse data rows
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim() === '') continue;
+
+                const values = lines[i].split(',').map(v => v.trim());
+                
+                vouchersData.push({
+                    voucherCode: values[columnMap.voucherCode] || '',
+                    value: values[columnMap.value] || '',
+                    customerName: values[columnMap.customerName] || '',
+                    issueDate: values[columnMap.issueDate] || '',
+                    expiryDate: values[columnMap.expiryDate] || '',
+                    service: values[columnMap.service] || '',
+                    redemptionDate: values[columnMap.redemptionDate] || '',
+                    redemptionService: values[columnMap.redemptionService] || '',
+                    newPrice: values[columnMap.newPrice] || ''
+                });
+            }
+        }
+
+        function searchVoucher() {
+            const code = document.getElementById('voucherInput').value.trim().toUpperCase();
+            
+            if (!code) {
+                showError('Please enter a voucher code');
+                hideResult();
+                return;
+            }
+
+            showLoading();
+            hideError();
+
+            // Simulate async search
+            setTimeout(() => {
+                const voucher = vouchersData.find(v => v.voucherCode.toUpperCase() === code);
+                hideLoading();
+
+                if (voucher) {
+                    displayVoucher(voucher);
+                } else {
+                    showError('Voucher code not found. Please check and try again.');
+                    hideResult();
+                }
+            }, 300);
+        }
+
+        function displayVoucher(voucher) {
+            document.getElementById('resultCode').textContent = voucher.voucherCode;
+            document.getElementById('resultValue').textContent = voucher.value || '-';
+            document.getElementById('resultCustomer').textContent = voucher.customerName || '-';
+            document.getElementById('resultIssueDate').textContent = voucher.issueDate || '-';
+            document.getElementById('resultExpiryDate').textContent = voucher.expiryDate || '-';
+            document.getElementById('resultService').textContent = voucher.service || '-';
+            document.getElementById('resultRedemptionDate').textContent = voucher.redemptionDate || '-';
+            document.getElementById('resultRedemptionService').textContent = voucher.redemptionService || '-';
+            document.getElementById('resultNewPrice').textContent = voucher.newPrice || '-';
+
+            // Check if expired
+            if (voucher.expiryDate) {
+                const expiryDate = new Date(voucher.expiryDate);
+                const today = new Date();
+                const isExpired = expiryDate < today;
+
+                const statusDiv = document.getElementById('resultStatus');
+                if (isExpired) {
+                    statusDiv.innerHTML = '<div class="status-expired">❌ Expired</div>';
+                } else {
+                    statusDiv.innerHTML = '<div class="status-valid">✓ Valid</div>';
+                }
+            }
+
+            showResult();
+        }
+
+        function showLoading() {
+            document.getElementById('loading').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('show');
+        }
+
+        function showResult() {
+            document.getElementById('result').classList.add('show');
+        }
+
+        function hideResult() {
+            document.getElementById('result').classList.remove('show');
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+        }
+
+        function hideError() {
+            document.getElementById('error').classList.remove('show');
+        }
+
+        // Allow Enter key to search
+        document.getElementById('voucherInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchVoucher();
+            }
+        });
+    </script>
+</body>
+</html>
